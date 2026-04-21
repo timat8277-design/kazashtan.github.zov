@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; margin: 0; padding: 20px; overflow-x: hidden; }
+        .container { border: 1px solid #00ff41; padding: 15px; box-shadow: 0 0 15px #00ff4133; }
+        h2 { text-transform: uppercase; letter-spacing: 2px; font-size: 18px; border-bottom: 1px solid #00ff41; padding-bottom: 10px; }
+        input { background: #000; border: 1px solid #00ff41; color: #00ff41; padding: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; outline: none; }
+        button { background: #00ff41; color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background: #000; color: #00ff41; border: 1px solid #00ff41; }
+        #log { margin-top: 15px; background: #000; font-size: 11px; height: 120px; overflow-y: auto; padding: 10px; border: 1px solid #333; }
+        .status { color: #ff003c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Stress-Test Unit v1.0</h2>
+        <input type="text" id="target" placeholder="Введите URL (например, https://site.com)">
+        <button onclick="startVisual()">Начать симуляцию</button>
+        <canvas id="loadChart" style="width:100%; height:200px; margin-top:15px;"></canvas>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('loadChart').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Нагрузка (RPS)', data: [], borderColor: '#00ff41', backgroundColor: 'rgba(0, 255, 65, 0.1)', fill: true }] },
+            options: { animation: false, scales: { y: { beginAtZero: true } } }
+        });
+
+        function startVisual() {
+            const url = document.getElementById('target').value;
+            if(!url) return;
+            const log = document.getElementById('log');
+            log.innerHTML = "> Инициализация протоколов...<br>";
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                const rps = Math.floor(Math.random() * 1000) + 500;
+                chart.data.labels.push(i++);
+                chart.data.datasets[0].data.push(rps);
+                if(chart.data.labels.length > 20) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+                chart.update();
+                
+                log.innerHTML += `> [${new Date().toLocaleTimeString()}] Поток ${i}: пакеты отправлены на ${url} <br>`;
+                log.scrollTop = log.scrollHeight;
+                if(i > 50) clearInterval(interval);
+            }, 300);
+        }
+    </script>
+</body>
+</html>
