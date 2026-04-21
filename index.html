@@ -2,89 +2,148 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --neon: #00ff41; --bg: #050505; }
-        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; padding: 15px; overflow: hidden; }
-        .terminal { border: 1px solid var(--neon); height: 95vh; display: flex; flex-direction: column; box-shadow: inset 0 0 20px #00ff4133; }
-        .header { background: var(--neon); color: #000; padding: 5px; font-weight: bold; text-align: center; letter-spacing: 3px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--neon); }
-        .stat-box { padding: 10px; border: 1px solid #111; font-size: 12px; }
-        #log { flex-grow: 1; overflow-y: auto; padding: 10px; font-size: 11px; line-height: 1.4; color: #008f11; }
-        .input-area { padding: 15px; border-top: 1px solid var(--neon); background: #000; }
-        input { background: transparent; border: 1px solid var(--neon); color: var(--neon); width: 100%; padding: 10px; box-sizing: border-box; outline: none; margin-bottom: 10px; }
-        button { background: transparent; border: 1px solid var(--neon); color: var(--neon); width: 100%; padding: 12px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.3s; }
-        button:hover { background: var(--neon); color: #000; }
-        .scanline { width: 100%; height: 100px; z-index: 10; background: linear-gradient(0deg, rgba(0,255,65,0) 0%, rgba(0,255,65,0.1) 50%, rgba(0,255,65,0) 100%); opacity: 0.1; position: absolute; bottom: 100%; pointer-events: none; animation: scan 4s linear infinite; }
-        @keyframes scan { to { bottom: -100px; } }
+        :root { --neon: #00ff41; --bg: #020202; --dim: #003b00; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; height: 100vh; }
+        
+        /* Фон Матрицы */
+        #matrix { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.15; }
+
+        .app-container { display: flex; flex-direction: column; height: 100vh; padding: 10px; gap: 10px; border: 1px solid var(--neon); }
+        
+        .header { text-align: center; font-size: 14px; padding: 5px; border: 1px solid var(--neon); background: rgba(0, 255, 65, 0.1); text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 10px var(--dim); }
+
+        .stats-panel { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; font-size: 10px; }
+        .stat-item { border: 1px solid var(--dim); padding: 5px; text-align: center; background: rgba(0,0,0,0.5); }
+        .stat-val { color: #fff; font-weight: bold; display: block; margin-top: 3px; }
+
+        .graph-area { flex: 1; border: 1px solid var(--dim); background: rgba(0,0,0,0.8); position: relative; min-height: 150px; }
+        
+        .terminal-box { height: 120px; border: 1px solid var(--dim); background: #000; font-size: 10px; padding: 5px; overflow-y: auto; color: #008f11; }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--neon); background: rgba(0, 255, 65, 0.05); }
+        input { background: #000; border: 1px solid var(--dim); color: var(--neon); padding: 12px; outline: none; font-family: inherit; font-size: 14px; }
+        input:focus { border-color: var(--neon); box-shadow: 0 0 5px var(--neon); }
+        
+        button { background: var(--neon); color: #000; border: none; padding: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); filter: brightness(1.2); }
+
+        .overlay-fx { pointer-events: none; position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 100; background-size: 100% 2px, 3px 100%; }
     </style>
 </head>
 <body>
-    <div class="scanline"></div>
-    <div class="terminal">
-        <div class="header">NEON_ZERO // OVERLOAD ENGINE</div>
-        <div class="stats-grid">
-            <div class="stat-box">NODE: MARATIK_DECK</div>
-            <div class="stat-box">ENCRYPTION: AES-256</div>
-            <div class="stat-box" id="cpu-load">CPU: 2%</div>
-            <div class="stat-box" id="ram-use">NET: STABLE</div>
+    <canvas id="matrix"></canvas>
+    <div class="overlay-fx"></div>
+
+    <div class="app-container">
+        <div class="header">NEON_ZERO // EXPLOIT CONSOLE v4.2</div>
+        
+        <div class="stats-panel">
+            <div class="stat-item">PACKETS<span id="p-count" class="stat-val">0</span></div>
+            <div class="stat-item">LOAD<span id="l-perc" class="stat-val">0%</span></div>
+            <div class="stat-item">STATUS<span id="s-txt" class="stat-val" style="color:var(--neon)">READY</span></div>
         </div>
-        <canvas id="attackChart" style="width:100%; height:120px;"></canvas>
-        <div id="log">--- ОЖИДАНИЕ ИНИЦИАЛИЗАЦИИ ---<br></div>
-        <div class="input-area">
-            <input type="text" id="target" placeholder="TARGET_URL: http://site.com">
-            <button onclick="startAttack()">ИНИЦИИРОВАТЬ ПОТОК</button>
+
+        <div class="graph-area">
+            <canvas id="liveChart"></canvas>
+        </div>
+
+        <div id="term" class="terminal-box">
+            [SYSTEM] Инициализация ядра...<br>
+            [SYSTEM] Поиск узлов в сети...<br>
+            [SYSTEM] Доступ разрешен: OPERATOR_MARATIK<br>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="target" placeholder="HTTP://TARGET-SITE.RU" spellcheck="false">
+            <button onclick="bootSequence()">ИНИЦИИРОВАТЬ ШТОРМ</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const log = document.getElementById('log');
-        const ctx = document.getElementById('attackChart').getContext('2d');
+        tg.enableClosingConfirmation();
 
-        let chart = new Chart(ctx, {
+        // --- МАТРИЦА ---
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()*&^%";
+        const fontSize = 16;
+        const columns = canvas.width/fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+            for(let i = 0; i < drops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+                if(drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 35);
+
+        // --- ГРАФИК ---
+        const chartCtx = document.getElementById('liveChart').getContext('2d');
+        const chart = new Chart(chartCtx, {
             type: 'line',
-            data: { labels: [], datasets: [{ label: 'RPS', data: [], borderColor: '#00ff41', borderWidth: 1, fill: true, backgroundColor: 'rgba(0, 255, 65, 0.05)' }] },
-            options: { animation: false, scales: { x: { display: false }, y: { display: false } }, plugins: { legend: { display: false } } }
+            data: { labels: [], datasets: [{ data: [], borderColor: '#00ff41', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: 'rgba(0,255,65,0.1)' }] },
+            options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { display: false }, y: { grid: { color: '#003b00' }, ticks: { color: '#00ff41', font: {size: 8} } } }, plugins: { legend: { display: false } } }
         });
 
-        function writeLog(text) {
-            log.innerHTML += `> ${text}<br>`;
-            log.scrollTop = log.scrollHeight;
+        // --- ЛОГИКА ---
+        function addLog(msg, color = "#008f11") {
+            const term = document.getElementById('term');
+            term.innerHTML += `<div style="color:${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+            term.scrollTop = term.scrollHeight;
         }
 
-        function startAttack() {
+        let packets = 0;
+        function bootSequence() {
             const url = document.getElementById('target').value;
-            if(!url) return;
+            if(!url) return tg.HapticFeedback.notificationOccurred('error');
 
-            writeLog("Инициализация протокола OVERLOAD...");
-            writeLog("Обход брандмауэра...");
-            writeLog("Синхронизация с ботнетом...");
+            tg.HapticFeedback.impactOccurred('heavy');
+            document.getElementById('s-txt').innerText = "ATTACKING";
+            document.getElementById('s-txt').style.color = "#ff0000";
 
-            let i = 0;
-            const timer = setInterval(() => {
-                i++;
-                const val = Math.floor(Math.random() * 500) + 200;
-                chart.data.labels.push(i);
-                chart.data.datasets[0].data.push(val);
-                if(chart.data.labels.length > 20) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+            addLog("ЗАХВАТ УЗЛА: " + url, "#fff");
+            addLog("ГЕНЕРАЦИЯ ПОТОКОВ...");
+
+            let step = 0;
+            const interval = setInterval(() => {
+                step++;
+                packets += Math.floor(Math.random() * 50) + 10;
+                document.getElementById('p-count').innerText = packets;
+                document.getElementById('l-perc').innerText = Math.min(99, Math.floor(step * 3.5)) + "%";
+
+                // Обновление графика
+                chart.data.labels.push("");
+                chart.data.datasets[0].data.push(Math.random() * 100);
+                if(chart.data.labels.length > 30) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
                 chart.update();
-                
-                document.getElementById('cpu-load').innerText = `CPU: ${Math.min(99, 10 + i*2)}%`;
-                writeLog(`PACKET_SENT -> ${url} | [OK]`);
 
-                if(i > 15) {
-                    clearInterval(timer);
-                    writeLog("ПЕРЕДАЧА ДАННЫХ В СЕРВЕРНЫЙ МОДУЛЬ...");
+                if(step % 5 === 0) addLog(`FLOOD_PACKET_SENT -> ${Math.random().toString(16).slice(2,8)}`);
+
+                if(step > 25) {
+                    clearInterval(interval);
+                    addLog("ПЕРЕДАЧА КОНТРОЛЯ BACKEND-МОДУЛЮ...", "#fff");
                     setTimeout(() => {
                         tg.sendData(url);
                         tg.close();
                     }, 1000);
                 }
-            }, 200);
+            }, 100);
         }
     </script>
 </body>
