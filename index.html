@@ -7,83 +7,53 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --neon: #00ff41; --bg: #020202; --dim: #003b00; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; height: 100vh; }
-        
-        /* Фон Матрицы */
         #matrix { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.15; }
-
         .app-container { display: flex; flex-direction: column; height: 100vh; padding: 10px; gap: 10px; border: 1px solid var(--neon); }
-        
-        .header { text-align: center; font-size: 14px; padding: 5px; border: 1px solid var(--neon); background: rgba(0, 255, 65, 0.1); text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 10px var(--dim); }
-
+        .header { text-align: center; font-size: 14px; padding: 5px; border: 1px solid var(--neon); background: rgba(0, 255, 65, 0.1); text-transform: uppercase; letter-spacing: 2px; }
         .stats-panel { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; font-size: 10px; }
         .stat-item { border: 1px solid var(--dim); padding: 5px; text-align: center; background: rgba(0,0,0,0.5); }
         .stat-val { color: #fff; font-weight: bold; display: block; margin-top: 3px; }
-
         .graph-area { flex: 1; border: 1px solid var(--dim); background: rgba(0,0,0,0.8); position: relative; min-height: 150px; }
-        
         .terminal-box { height: 120px; border: 1px solid var(--dim); background: #000; font-size: 10px; padding: 5px; overflow-y: auto; color: #008f11; }
-
-        .input-group { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--neon); background: rgba(0, 255, 65, 0.05); }
-        input { background: #000; border: 1px solid var(--dim); color: var(--neon); padding: 12px; outline: none; font-family: inherit; font-size: 14px; }
-        input:focus { border-color: var(--neon); box-shadow: 0 0 5px var(--neon); }
-        
-        button { background: var(--neon); color: #000; border: none; padding: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); filter: brightness(1.2); }
-
-        .overlay-fx { pointer-events: none; position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 100; background-size: 100% 2px, 3px 100%; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--neon); }
+        input { background: #000; border: 1px solid var(--dim); color: var(--neon); padding: 12px; outline: none; font-size: 14px; }
+        button { background: var(--neon); color: #000; border: none; padding: 15px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        button:active { filter: brightness(1.2); }
     </style>
 </head>
 <body>
     <canvas id="matrix"></canvas>
-    <div class="overlay-fx"></div>
-
     <div class="app-container">
-        <div class="header">NEON_ZERO // EXPLOIT CONSOLE v4.2</div>
-        
+        <div class="header">NEON_ZERO // OVERLOAD v4.2</div>
         <div class="stats-panel">
             <div class="stat-item">PACKETS<span id="p-count" class="stat-val">0</span></div>
             <div class="stat-item">LOAD<span id="l-perc" class="stat-val">0%</span></div>
-            <div class="stat-item">STATUS<span id="s-txt" class="stat-val" style="color:var(--neon)">READY</span></div>
+            <div class="stat-item">STATUS<span id="s-txt" class="stat-val">READY</span></div>
         </div>
-
-        <div class="graph-area">
-            <canvas id="liveChart"></canvas>
-        </div>
-
-        <div id="term" class="terminal-box">
-            [SYSTEM] Инициализация ядра...<br>
-            [SYSTEM] Поиск узлов в сети...<br>
-            [SYSTEM] Доступ разрешен: OPERATOR_MARATIK<br>
-        </div>
-
+        <div class="graph-area"><canvas id="liveChart"></canvas></div>
+        <div id="term" class="terminal-box"></div>
         <div class="input-group">
             <input type="text" id="target" placeholder="HTTP://TARGET-SITE.RU" spellcheck="false">
-            <button onclick="bootSequence()">ИНИЦИИРОВАТЬ ШТОРМ</button>
+            <button onclick="startOverload()">ИНИЦИИРОВАТЬ ШТОРМ</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.enableClosingConfirmation();
 
-        // --- МАТРИЦА ---
+        // --- MATRIX EFFECT ---
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()*&^%";
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
         const fontSize = 16;
         const columns = canvas.width/fontSize;
         const drops = Array(Math.floor(columns)).fill(1);
-
         function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#0F0';
-            ctx.font = fontSize + 'px monospace';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0'; ctx.font = fontSize + 'px monospace';
             for(let i = 0; i < drops.length; i++) {
                 const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
                 ctx.fillText(text, i*fontSize, drops[i]*fontSize);
@@ -93,57 +63,42 @@
         }
         setInterval(drawMatrix, 35);
 
-        // --- ГРАФИК ---
+        // --- CHART ---
         const chartCtx = document.getElementById('liveChart').getContext('2d');
         const chart = new Chart(chartCtx, {
             type: 'line',
             data: { labels: [], datasets: [{ data: [], borderColor: '#00ff41', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: 'rgba(0,255,65,0.1)' }] },
-            options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { display: false }, y: { grid: { color: '#003b00' }, ticks: { color: '#00ff41', font: {size: 8} } } }, plugins: { legend: { display: false } } }
+            options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { display: false }, y: { display: false } }, plugins: { legend: { display: false } } }
         });
 
-        // --- ЛОГИКА ---
-        function addLog(msg, color = "#008f11") {
+        function addLog(msg) {
             const term = document.getElementById('term');
-            term.innerHTML += `<div style="color:${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+            term.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
             term.scrollTop = term.scrollHeight;
         }
 
         let packets = 0;
-        function bootSequence() {
+        function startOverload() {
             const url = document.getElementById('target').value;
-            if(!url) return tg.HapticFeedback.notificationOccurred('error');
+            if(!url) return;
 
-            tg.HapticFeedback.impactOccurred('heavy');
-            document.getElementById('s-txt').innerText = "ATTACKING";
-            document.getElementById('s-txt').style.color = "#ff0000";
+            tg.sendData(url); // Отправляем цель боту
+            document.getElementById('s-txt').innerText = "RUNNING";
+            document.getElementById('s-txt').style.color = "red";
+            addLog("ПОТОКИ СИНХРОНИЗИРОВАНЫ С BACKEND...");
 
-            addLog("ЗАХВАТ УЗЛА: " + url, "#fff");
-            addLog("ГЕНЕРАЦИЯ ПОТОКОВ...");
-
-            let step = 0;
-            const interval = setInterval(() => {
-                step++;
-                packets += Math.floor(Math.random() * 50) + 10;
+            setInterval(() => {
+                packets += Math.floor(Math.random() * 200);
                 document.getElementById('p-count').innerText = packets;
-                document.getElementById('l-perc').innerText = Math.min(99, Math.floor(step * 3.5)) + "%";
-
-                // Обновление графика
+                document.getElementById('l-perc').innerText = Math.floor(Math.random() * 20 + 80) + "%";
+                
                 chart.data.labels.push("");
                 chart.data.datasets[0].data.push(Math.random() * 100);
                 if(chart.data.labels.length > 30) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
                 chart.update();
-
-                if(step % 5 === 0) addLog(`FLOOD_PACKET_SENT -> ${Math.random().toString(16).slice(2,8)}`);
-
-                if(step > 25) {
-                    clearInterval(interval);
-                    addLog("ПЕРЕДАЧА КОНТРОЛЯ BACKEND-МОДУЛЮ...", "#fff");
-                    setTimeout(() => {
-                        tg.sendData(url);
-                        tg.close();
-                    }, 1000);
-                }
-            }, 100);
+                
+                if(Math.random() > 0.7) addLog("PACKET_BATCH_SENT: OK");
+            }, 200);
         }
     </script>
 </body>
